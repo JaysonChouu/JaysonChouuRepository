@@ -17,7 +17,7 @@ FROM python:${PYTHON_VERSION} AS backend-builder
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     netcat=1.* \
-    libpq-dev=13.* \
+    libpq-dev \
     unixodbc-dev=2.* \
     g++=4:* \
     libssl-dev=1.* \
@@ -30,12 +30,18 @@ COPY Pipfile* /tmp/
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir --upgrade pipenv \
  && pipenv lock -r > /requirements.txt \
- && echo "psycopg2-binary==2.9.3" >> /requirements.txt \
- && echo "django-heroku==0.3.1" >> /requirements.txt \
  && pip install --no-cache-dir -r /requirements.txt \
+ && pip uninstall -y psycopg2 \
+ && pip install psycopg2-binary \
  && pip wheel --no-cache-dir -r /requirements.txt -w /deps
 
 FROM python:${PYTHON_VERSION} AS runtime
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    unixodbc-dev=2.* \
+    libssl-dev=1.* \
+ && apt-get clean
 
 RUN useradd -ms /bin/sh doccano
 
